@@ -2,7 +2,7 @@
 
 use std::ops::Bound;
 use std::path::Path;
-use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use anyhow::{Ok, Result};
@@ -85,7 +85,12 @@ impl MemTable {
         let k = Bytes::copy_from_slice(key);
         let v = Bytes::copy_from_slice(value);
 
+        let size = k.len() + v.len();
+
         let _ = self.map.insert(k, v);
+
+        self.approximate_size.fetch_add(size, Ordering::Release);
+
         Ok(())
     }
 
