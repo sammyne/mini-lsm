@@ -120,6 +120,7 @@ fn test_task2_merge_1() {
         ],
     );
 
+    println!("helloworld");
     let mut iter = MergeIterator::create(vec![Box::new(i3), Box::new(i1), Box::new(i2)]);
 
     check_iter_result_by_key(
