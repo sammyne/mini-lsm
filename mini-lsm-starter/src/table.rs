@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 pub use builder::SsTableBuilder;
-use bytes::Buf;
+use bytes::{Buf, Bytes};
 pub use iterator::SsTableIterator;
 
 use crate::block::Block;
@@ -34,18 +34,53 @@ impl BlockMeta {
     /// Encode block meta to a buffer.
     /// You may add extra fields to the buffer,
     /// in order to help keep track of `first_key` when decoding from the same buffer in the future.
-    pub fn encode_block_meta(
-        block_meta: &[BlockMeta],
-        #[allow(clippy::ptr_arg)] // remove this allow after you finish
-        buf: &mut Vec<u8>,
-    ) {
-        unimplemented!()
+    pub fn encode_block_meta(block_meta: &[BlockMeta], buf: &mut Vec<u8>) {
+        for v in block_meta {
+            v.encode(buf);
+        }
     }
 
     /// Decode block meta from a buffer.
     pub fn decode_block_meta(buf: impl Buf) -> Vec<BlockMeta> {
-        unimplemented!()
+        let mut buf = buf;
     }
+}
+
+impl BlockMeta {
+    fn must_decode<R: Buf>(r: &mut R) -> Self {
+        let offset = r.get_u32_le() as usize;
+
+        let first_key = KeyBytes::from_bytes(read_length_prefix_value(r));
+        let last_key = KeyBytes::from_bytes(read_length_prefix_value(r));
+
+        Self {
+            offset,
+            first_key,
+            last_key,
+        }
+    }
+
+    fn encode(&self, out: &mut Vec<u8>) {
+        let o = (self.offset as u32).to_le_bytes();
+        out.extend_from_slice(&o);
+        append_with_length_prefix(out, self.first_key.raw_ref());
+        append_with_length_prefix(out, self.last_key.raw_ref());
+    }
+}
+
+fn append_with_length_prefix(out: &mut Vec<u8>, b: &[u8]) {
+    let length = (b.len() as u16).to_le_bytes();
+    out.extend_from_slice(&length);
+    out.extend_from_slice(b);
+}
+
+fn read_length_prefix_value<R: Buf>(r: &mut R) -> Bytes {
+    let length = r.get_u16_le() as usize;
+
+    let out = r.copy_to_bytes(length);
+    r.advance(length);
+
+    out
 }
 
 /// A file object.
