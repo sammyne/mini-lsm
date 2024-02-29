@@ -43,6 +43,23 @@ impl BlockMeta {
     /// Decode block meta from a buffer.
     pub fn decode_block_meta(buf: impl Buf) -> Vec<BlockMeta> {
         let mut buf = buf;
+
+        let mut out = vec![];
+        while buf.remaining() > 0 {
+            out.push(Self::must_decode(&mut buf));
+        }
+
+        out
+    }
+}
+
+impl Default for BlockMeta {
+    fn default() -> Self {
+        Self {
+            offset: Default::default(),
+            first_key: Default::default(),
+            last_key: Default::default(),
+        }
     }
 }
 
@@ -76,11 +93,7 @@ fn append_with_length_prefix(out: &mut Vec<u8>, b: &[u8]) {
 
 fn read_length_prefix_value<R: Buf>(r: &mut R) -> Bytes {
     let length = r.get_u16_le() as usize;
-
-    let out = r.copy_to_bytes(length);
-    r.advance(length);
-
-    out
+    r.copy_to_bytes(length)
 }
 
 /// A file object.

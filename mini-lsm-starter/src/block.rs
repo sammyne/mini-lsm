@@ -17,6 +17,7 @@ pub struct Block {
 impl Block {
     /// Encode the internal data to the data layout illustrated in the tutorial
     /// Note: You may want to recheck if any of the expected field is missing from your output
+    /// Todo(xiangminli): 提供一个直接写入外部 Vec<u8> 的 encode 方法。
     pub fn encode(&self) -> Bytes {
         // todo: 检查 2 字节记录 #(entries) 是否足够
         let cap = self.data.len() + self.offsets.len() * 2 + 2;

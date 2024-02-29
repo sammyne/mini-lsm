@@ -100,6 +100,15 @@ impl Key<Bytes> {
     }
 }
 
+impl<T> From<T> for Key<Bytes>
+where
+    T: Into<Vec<u8>>,
+{
+    fn from(value: T) -> Self {
+        Self::from_bytes(value.into().into())
+    }
+}
+
 impl<'a> Key<&'a [u8]> {
     pub fn to_key_vec(self) -> KeyVec {
         Key(self.0.to_vec())
